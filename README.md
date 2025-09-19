@@ -1,8 +1,8 @@
-OdysseyAI
+**OdysseyAI**
 
 - OdysseyAI is an AI-powered event and activity discovery agent. Unlike general-purpose chatbots, OdysseyAI specializes in curating local, personalized experiences — from thrift shops to hidden gems — by scraping real-world content (TikTok, Instagram) and turning it into actionable recommendations.
 
-Features
+**Features**
 
 - User Personalization: Tailored to your preferences (age, mood, budget, group type).
 - Social Content Scraping: Uses Apify to collect fresh event/activity data from TikTok & Instagram.
@@ -10,7 +10,7 @@ Features
 - Chat Interface: Powered by MiniMax LLM for conversational recommendations.
 - Optional Memory: Redis backend to store user preferences and past feedback.
 
-System Architecture
+**System Architecture**
 
 - Survey → User Preferences
 - Google Form/Typeform survey collects user context (age, mood, activity type, budget).
@@ -31,7 +31,7 @@ System Architecture
 - FastAPI backend serving /chat endpoint.
 - Simple Next.js chat UI (input + streaming output + activity cards).
 
-Tech Stack
+**Tech Stack**
 
 - Apify → Scraping TikTok/Instagram content
 - LlamaIndex → Document parsing, activity extraction, semantic search
