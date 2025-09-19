@@ -46,25 +46,102 @@ APIFY_TOKEN = os.environ.get("APIFY_API_TOKEN")
 if not APIFY_TOKEN:
     raise ValueError("⚠️ APIFY_API_TOKEN not set in environment variables.")
 
-def run_apify_scraper(actor_id, hashtags):
-    """Run an Apify scraper actor with hashtags as input"""
+
+def run_apify_scraper(actor_id, payload):
+    """
+    Run an Apify scraper actor with the given payload.
+    Payload may differ by platform (hashtags, query, queries).
+    """
     url = f"https://api.apify.com/v2/acts/{actor_id}/run-sync-get-dataset-items?token={APIFY_TOKEN}"
-    payload = {"hashtags": hashtags}
     response = requests.post(url, json=payload)
     response.raise_for_status()
     return response.json()
 
+
+# Define platform configurations
+PLATFORM_CONFIGS = {
+    "tiktok": {
+        "actor": "apify~tiktok-scraper",
+        "payload_key": "hashtags"
+    },
+    "instagram": {
+        "actor": "apify~instagram-scraper",
+        "payload_key": "hashtags"
+    },
+    "maps": {
+        "actor": "apify~google-maps-scraper",
+        "payload_key": "queries"
+    },
+    "eventbrite": {
+        "actor": "apify~eventbrite-scraper",
+        "payload_key": "query"
+    }
+}
+
+def scrape_all_platforms(user_id, hashtags, platforms=None):
+    """
+    Run scrapers across multiple platforms for a single user.
+    Saves ONE merged JSON file with a 'platform' field.
+    """
+    if platforms is None:
+        platforms = ["tiktok", "instagram", "maps", "eventbrite"]
+
+    all_results = []  # collect everything here
+
+    for platform in platforms:
+        if platform not in PLATFORM_CONFIGS:
+            print(f"⚠️ Unknown platform: {platform}")
+            continue
+
+        config = PLATFORM_CONFIGS[platform]
+        actor_id = config["actor"]
+        key = config["payload_key"]
+
+        # Prepare payload differently depending on input type
+        if key == "hashtags":
+            payload = {key: hashtags}
+        elif key == "queries":
+            payload = {key: [", ".join(hashtags)]}  # Maps expects list of queries
+        elif key == "query":
+            payload = {key: ", ".join(hashtags)}    # Eventbrite expects a single string
+        else:
+            print(f"⚠️ Unsupported payload type for {platform}")
+            continue
+
+        try:
+            print(f"🔎 Scraping {platform} for user {user_id} with {len(hashtags)} tags/queries")
+            results = run_apify_scraper(actor_id, payload)
+
+            # Attach platform label to each result item
+            for item in results:
+                item["platform"] = platform
+            all_results.extend(results)
+
+            print(f"✅ Collected {len(results)} {platform} results for user {user_id}")
+
+        except Exception as e:
+            print(f"⚠️ Error scraping {platform} for user {user_id}: {e}")
+
+    # Save ONE merged file per user
+    merged_filename = f"user_{user_id}_results.json"
+    with open(merged_filename, "w") as f:
+        json.dump(all_results, f, indent=2)
+
+    print(f"📂 Saved merged results file: {merged_filename} with {len(all_results)} total items")
+
 # -------------------------
-# Step 3: Use MiniMax → Apify per User
+# Step 3: Use MiniMax → Scrape All Platforms
 # -------------------------
 for i, profile in enumerate(user_profiles):
     if profile["activity_categories"]:
         print(f"🤖 Generating hashtags for user {i+1} with MiniMax...")
 
-        hashtags_json = generate_hashtags_with_minimax(profile["activity_categories"], profile["location"])
+        hashtags_json = generate_hashtags_with_minimax(
+            profile["activity_categories"], 
+            profile["location"]
+        )
         print("MiniMax output:", hashtags_json)
 
-        # Try to parse MiniMax JSON output into Python dict
         try:
             hashtags_dict = json.loads(hashtags_json)
             all_hashtags = [h for lst in hashtags_dict.values() for h in lst]
@@ -73,10 +150,4 @@ for i, profile in enumerate(user_profiles):
             all_hashtags = []
 
         if all_hashtags:
-            try:
-                results = run_apify_scraper("apify~tiktok-scraper", all_hashtags)
-                with open(f"user_{i+1}_results.json", "w") as f:
-                    json.dump(results, f, indent=2)
-                print(f"✅ Saved {len(results)} TikToks for user {i+1}")
-            except Exception as e:
-                print(f"⚠️ Error scraping for user {i+1}: {e}")
+            scrape_all_platforms(i+1, all_hashtags)
