@@ -18,7 +18,7 @@ Unlike general-purpose chatbots, OdysseyAI focuses on curating **local, personal
 
 
 ### 1. Survey → User Preferences
-- Google Form/Typeform collects user context (age, mood, activity type, budget).  
+- Google Form collects user context (age, mood, activity type, budget).  
 - Responses exported as CSV/JSON and converted into scraping queries (hashtags, filters).  
 
 ### 2. Data Collection (Apify)
