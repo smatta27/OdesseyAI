@@ -18,6 +18,7 @@ Unlike general-purpose chatbots, OdysseyAI focuses on curating **local, personal
 
 
 ### 1. Survey → User Preferences
+- SURVEY LINK: https://docs.google.com/forms/d/e/1FAIpQLSeikUfmao6B-sivPaVhTlctFoyri0IEdQKnXg3B8qioA153Og/viewform?usp=header
 - Google Form collects user context (age, mood, activity type, budget).  
 - Responses exported as CSV/JSON and converted into scraping queries (hashtags, filters).  
 
